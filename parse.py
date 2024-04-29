@@ -4,12 +4,16 @@ keywords = {
     "start":{
         "cd_unit":"CODE_UNIT_STARTED",
         "exe":"EXECUTION_STARTED",
-        "prof":"CUMULATIVE_PROFILING_BEGIN"
+        "prof":"CUMULATIVE_PROFILING_BEGIN",
+        "method":"METHOD_ENTRY",
+        "constructor":"CONSTRUCTOR_ENTRY"
     },
     "end":{
         "cd_unit":"CODE_UNIT_FINISHED",
         "exe":"EXECUTION_FINISHED",
-        "prof":"CUMULATIVE_PROFILING_END"
+        "prof":"CUMULATIVE_PROFILING_END",
+        "method":"METHOD_EXIT",
+        "constructor":"CONSTRUCTOR_EXIT"
     }
 }
 
@@ -24,8 +28,8 @@ html_escape_chars = {
     # Add more HTML escape characters as needed
 }
 
-html_init = ""
-html_end = ""
+html_init = '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="styles.css">'
+html_end = '<script src="script.js"></script></body></html>'
 
 # This function is used to write the html content
 def write_file(folder_path,filename,file_content):
@@ -105,10 +109,13 @@ if __name__ == "__main__":
     input_file_name = filename + '.log'
     output_file_name = filename + '.html'
 
+    output_folder_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'templates')
+    print(output_folder_path)
+
     file_content = open_file(folder_path,input_file_name)
     all_lines = get_lines(file_content)
     new_lines = create_html_wrapper(all_lines)
     if len(new_lines) > 0:
         print(len(new_lines))
-    write_file(folder_path,output_file_name,new_lines)
-    print(folder_path+output_file_name)
+    write_file(output_folder_path,output_file_name,new_lines)
+    print(output_folder_path+output_file_name)
