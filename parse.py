@@ -1,13 +1,18 @@
 import os
 
 keywords = {
-    "method_start":"CODE_UNIT_STARTED",
-    "method_end":"CODE_UNIT_FINISHED",
-    "exe_start":"EXECUTION_STARTED",
-    "exe_end":"EXECUTION_FINISHED",
-    "prof_start":"CUMULATIVE_PROFILING_BEGIN",
-    "prof_end":"CUMULATIVE_PROFILING_END"
+    "start":{
+        "cd_unit":"CODE_UNIT_STARTED",
+        "exe":"EXECUTION_STARTED",
+        "prof":"CUMULATIVE_PROFILING_BEGIN"
+    },
+    "end":{
+        "cd_unit":"CODE_UNIT_FINISHED",
+        "exe":"EXECUTION_FINISHED",
+        "prof":"CUMULATIVE_PROFILING_END"
+    }
 }
+
 html_escape_chars = {
     "<": "&lt;",
     ">": "&gt;",
@@ -56,83 +61,53 @@ def extract_method_name(line):
             return parts[len(parts)-1]
     return None
 
-# get start line and end line for the method
-def chunk_method(method_name,lines,index,start_word,end_word):
-    start_line = -1
-    end_line = -1
-    for curr_line_no,line in enumerate(lines):
-        if curr_line_no >= index:
-            if find_str(start_word,line) and find_str(method_name,line):
-                start_line = curr_line_no
-            elif start_line > -1 and find_str(end_word,line) and find_str(method_name,line):
-                end_line = curr_line_no
-            elif start_line > -1 and find_str(end_word,line) and start_word in [keywords["exe_start"],keywords["prof_start"]]:
-                end_line = curr_line_no
-        if start_line > -1 and end_line > -1:
-            break
-    return start_line,end_line
-
-def get_chunk_words(line):
-    start_word = ""
-    end_word = ""
-    chunk_stat = False
-    if line is not None:
-        if find_str(keywords["method_start"],line):
-            return keywords["method_start"],keywords["method_end"],True
-        if find_str(keywords["exe_start"],line):
-            return keywords["exe_start"],keywords["exe_end"],True
-        if find_str(keywords["prof_start"],line):
-            return keywords["prof_start"],keywords["prof_end"],True
-    return start_word,end_word,chunk_stat
-
-def create_bundles(all_lines):
-    bundles = []
-    for index,line in enumerate(all_lines):
-        start_word,end_word,chunk_stat = get_chunk_words(line)
-        if chunk_stat:
-            method_name = extract_method_name(line)
-            start_line,end_line = chunk_method(method_name,all_lines,index,start_word,end_word)
-            bundles.append({
-                "method_name":method_name,
-                "start_line":start_line,
-                "end_line":end_line
-                }
-            )
-    return bundles
-
 def html_escape(text):
     for char,escape_char in html_escape_chars.items():
         text = text.replace(char,escape_char)
     return text
 
-def get_html_line(current_line,line,bundles):
-    line = html_escape(line)
-    for index,d in enumerate(bundles):
-        if d["start_line"] == current_line:
-            return '<button class="accordion">'+d["method_name"]+'</button><div class="panel"><br/>'+line
-        elif d["end_line"] == current_line:
-            return line +"<br/></div>"
+def is_start(line):
+    starts = keywords["start"]
+    for key,val in starts.items():
+        if val in line:
+            return True
+    else:
+        return False
+    
+def is_end(line):
+    starts = keywords["end"]
+    for key,val in starts.items():
+        if val in line:
+            return True
+    else:
+        return False
+
+def create_html_line(line):
+    if is_start(line):
+        return '<button class="accordion">'+extract_method_name(line)+'</button><div class="panel"><br/>'+line
+    elif is_end(line):
+        return line +"<br/></div>"
     return line+"<br/>"
 
-def generate_new_content(all_lines,bundles):
-    lines = []
-    current_line = -1
-    lines.append(html_init)
+def create_html_wrapper(all_lines):
+    new_lines = []
+    new_lines.append(html_init)
     for line in all_lines:
-        current_line = current_line + 1
-        lines.append(get_html_line(current_line,line,bundles))
-    lines.append(html_end)
-    return lines
+        new_lines.append(create_html_line(line))
+    new_lines.append(html_end)
+    return new_lines
 
 if __name__ == "__main__":
-    folder_path = "<<Provide path to folder>>"
-    filename = "<<provide log file name>>"
+    folder_path = "C:\\Users\\Praveen\\Downloads\\"
+    filename = "apex-07L5i00000HIwS7EAL"
 
-    output_file_name = "output2.html"
+    input_file_name = filename + '.log'
+    output_file_name = filename + '.html'
 
-    file_content = open_file(folder_path,filename)
+    file_content = open_file(folder_path,input_file_name)
     all_lines = get_lines(file_content)
-    bundles = create_bundles(all_lines)
-    print(bundles)
-    newlines = generate_new_content(all_lines,bundles)
-    write_file(folder_path,output_file_name,newlines)
+    new_lines = create_html_wrapper(all_lines)
+    if len(new_lines) > 0:
+        print(len(new_lines))
+    write_file(folder_path,output_file_name,new_lines)
+    print(folder_path+output_file_name)
