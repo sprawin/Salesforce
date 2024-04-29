@@ -83,6 +83,7 @@ def is_end(line):
         return False
 
 def create_html_line(line):
+    line = html_escape(line)
     if is_start(line):
         return '<button class="accordion">'+extract_method_name(line)+'</button><div class="panel"><br/>'+line
     elif is_end(line):
